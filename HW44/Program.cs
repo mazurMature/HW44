@@ -7,15 +7,14 @@ namespace HW44
     {
         static void Main(string[] args)
         {
-            Squad squadA = new Squad("Alpha");
-            Squad squadB = new Squad("Beta");
+            SquadCreator creator = new SquadCreator();
 
-            squadA.Fill(10);
-            squadB.Fill(10);
+            Squad squadA = creator.Create(10, "Alpha");
+            Squad squadB = creator.Create(10, "Beta");
 
             Battle battle = new Battle(squadA, squadB);
 
-            battle.Start();
+            battle.Work();
         }
     }
 
@@ -25,7 +24,12 @@ namespace HW44
 
         public static int GenerateRandomNumber(int minValue, int maxValue)
         {
-            return s_random.Next(minValue, maxValue);
+            return s_random.Next(minValue, maxValue + 1);
+        }
+
+        public static int GenerateRandomNumber(int maxValue)
+        {
+            return s_random.Next(maxValue);
         }
     }
 
@@ -40,7 +44,7 @@ namespace HW44
             _squadB = squadB;
         }
 
-        public void Start()
+        public void Work()
         {
             while (_squadA.HasAliveSoldiers() && _squadB.HasAliveSoldiers())
             {
@@ -88,6 +92,8 @@ namespace HW44
                 Console.WriteLine($"{GetType().Name} атакует {target.GetType().Name}, но не пробивает броню\n");
             }
         }
+
+        public abstract Soldier Clone();
     }
 
     public class RegularSoldier : Soldier
@@ -99,9 +105,14 @@ namespace HW44
             if (enemies.Count == 0)
                 return;
 
-            Soldier target = enemies[Utils.GenerateRandomNumber(0, enemies.Count)];
+            Soldier target = enemies[Utils.GenerateRandomNumber(enemies.Count)];
 
             DealDamage(target, Damage);
+        }
+
+        public override Soldier Clone()
+        {
+            return new RegularSoldier(HealthPoints, Damage, ArmorPoints);
         }
     }
 
@@ -116,11 +127,16 @@ namespace HW44
             if (enemies.Count == 0)
                 return;
 
-            Soldier target = enemies[Utils.GenerateRandomNumber(0, enemies.Count)];
+            Soldier target = enemies[Utils.GenerateRandomNumber(enemies.Count)];
 
             int damage = Damage * _criticalHitMultiply;
 
             DealDamage(target, damage);
+        }
+
+        public override Soldier Clone()
+        {
+            return new SniperSoldier(HealthPoints, Damage, ArmorPoints);
         }
     }
 
@@ -141,12 +157,17 @@ namespace HW44
             {
                 do
                 {
-                    index = Utils.GenerateRandomNumber(0, enemies.Count);
+                    index = Utils.GenerateRandomNumber(enemies.Count);
                 } while (attackedIndexes.Contains(index));
 
                 attackedIndexes.Add(index);
                 DealDamage(enemies[index], Damage);
             }
+        }
+
+        public override Soldier Clone()
+        {
+            return new МortarmanSoldier(HealthPoints, Damage, ArmorPoints);
         }
     }
 
@@ -159,55 +180,62 @@ namespace HW44
             int maxHitsCounts = 5;
             int minHitsCounts = 2;
 
-            int hits = Utils.GenerateRandomNumber(minHitsCounts, maxHitsCounts + 1);
+            int hits = Utils.GenerateRandomNumber(minHitsCounts, maxHitsCounts);
 
             for (int i = 0; i < hits; i++)
             {
-                Soldier target = enemies[Utils.GenerateRandomNumber(0, enemies.Count)];
+                Soldier target = enemies[Utils.GenerateRandomNumber(enemies.Count)];
 
                 DealDamage(target, Damage);
             }
+        }
+
+        public override Soldier Clone()
+        {
+            return new MachineGunnerSoldier(HealthPoints, Damage, ArmorPoints);
+        }
+    }
+
+    public class SquadCreator
+    {
+        public Squad Create(int count, string name)
+        {
+            List<Soldier> baseSoldiers = new List<Soldier>();
+            List<Soldier> soldiers = new List<Soldier>();
+
+            baseSoldiers.Add(new RegularSoldier(100, 20, 5));
+            baseSoldiers.Add(new SniperSoldier(90, 25, 4));
+            baseSoldiers.Add(new МortarmanSoldier(80, 15, 3));
+            baseSoldiers.Add(new MachineGunnerSoldier(85, 15, 2));
+
+            for (int i = 0; i < count; i++)
+            {
+                int index = Utils.GenerateRandomNumber(baseSoldiers.Count);
+
+                soldiers.Add(baseSoldiers[index].Clone());
+            }
+
+            Squad squad = new Squad(name, soldiers);
+            return squad;
         }
     }
 
     public class Squad
     {
-        private List<Soldier> _soldiers = new List<Soldier>();
+        private List<Soldier> _soldiers;
 
         public Squad(string name)
         {
             Name = name;
         }
 
-        public string Name { get; private set; }
-
-        public void Fill(int count)
+        public Squad(string name, List<Soldier> soldiers)
         {
-            for (int i = 0; i < count; i++)
-            {
-                int type = Utils.GenerateRandomNumber(1, 4);
-
-                switch (type)
-                {
-                    case 1:
-                        _soldiers.Add(new RegularSoldier(100, 20, 5));
-                        break;
-
-                    case 2:
-                        _soldiers.Add(new SniperSoldier(90, 25, 4));
-                        break;
-
-                    case 3:
-                        _soldiers.Add(new МortarmanSoldier(80, 15, 3));
-                        break;
-
-                    case 4:
-                        _soldiers.Add(new MachineGunnerSoldier(85, 15, 2));
-                        break;
-
-                }
-            }
+            _soldiers = soldiers;
+            Name = name;
         }
+
+        public string Name { get; private set; }
 
         public void Attack(Squad target)
         {
