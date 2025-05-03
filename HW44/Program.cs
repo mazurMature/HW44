@@ -25,7 +25,7 @@ namespace HW44
 
         public static int GenerateRandomNumber(int minValue, int maxValue)
         {
-            return s_random.Next(minValue, maxValue + 1);
+            return s_random.Next(minValue, maxValue);
         }
     }
 
@@ -47,13 +47,10 @@ namespace HW44
                 Console.WriteLine("\n--- Новый раунд ---");
 
                 _squadA.Attack(_squadB);
-                _squadB.RemoveDead();
-
-                if (_squadB.HasAliveSoldiers() == false)
-                    break;
-
                 _squadB.Attack(_squadA);
-                _squadA.RemoveDead();
+
+                _squadA.SelectAlive();
+                _squadB.SelectAlive();
             }
 
             Console.WriteLine("\n--- Битва завершена ---");
@@ -99,9 +96,10 @@ namespace HW44
 
         public override void Attack(List<Soldier> enemies)
         {
-            if (enemies.Count == 0) return;
+            if (enemies.Count == 0)
+                return;
 
-            Soldier target = enemies[Utils.GenerateRandomNumber(0, enemies.Count - 1)];
+            Soldier target = enemies[Utils.GenerateRandomNumber(0, enemies.Count)];
 
             DealDamage(target, Damage);
         }
@@ -115,9 +113,10 @@ namespace HW44
 
         public override void Attack(List<Soldier> enemies)
         {
-            if (enemies.Count == 0) return;
+            if (enemies.Count == 0)
+                return;
 
-            Soldier target = enemies[Utils.GenerateRandomNumber(0, enemies.Count - 1)];
+            Soldier target = enemies[Utils.GenerateRandomNumber(0, enemies.Count)];
 
             int damage = Damage * _criticalHitMultiply;
 
@@ -131,17 +130,18 @@ namespace HW44
 
         public override void Attack(List<Soldier> enemies)
         {
+            int maxHitCounts = 4;
             int index;
             List<int> attackedIndexes = new List<int>();
 
-            int hitCounts = Utils.GenerateRandomNumber(2, Math.Min(4, enemies.Count));
+            int hitCounts = Utils.GenerateRandomNumber(1, maxHitCounts);
+            hitCounts = Math.Min(hitCounts, enemies.Count);
 
             for (int i = 0; i < hitCounts; i++)
             {
                 do
                 {
-                    index = Utils.GenerateRandomNumber(0, enemies.Count - 1);
-
+                    index = Utils.GenerateRandomNumber(0, enemies.Count);
                 } while (attackedIndexes.Contains(index));
 
                 attackedIndexes.Add(index);
@@ -156,11 +156,14 @@ namespace HW44
 
         public override void Attack(List<Soldier> enemies)
         {
-            int hits = Utils.GenerateRandomNumber(2, 5);
+            int maxHitsCounts = 5;
+            int minHitsCounts = 2;
+
+            int hits = Utils.GenerateRandomNumber(minHitsCounts, maxHitsCounts + 1);
 
             for (int i = 0; i < hits; i++)
             {
-                Soldier target = enemies[Utils.GenerateRandomNumber(0, enemies.Count - 1)];
+                Soldier target = enemies[Utils.GenerateRandomNumber(0, enemies.Count)];
 
                 DealDamage(target, Damage);
             }
@@ -170,7 +173,7 @@ namespace HW44
     public class Squad
     {
         private List<Soldier> _soldiers = new List<Soldier>();
-        
+
         public Squad(string name)
         {
             Name = name;
@@ -191,15 +194,15 @@ namespace HW44
                         break;
 
                     case 2:
-                        _soldiers.Add(new SniperSoldier(90, 25 , 4));
+                        _soldiers.Add(new SniperSoldier(90, 25, 4));
                         break;
 
                     case 3:
-                        _soldiers.Add(new МortarmanSoldier(80, 15 , 3));
+                        _soldiers.Add(new МortarmanSoldier(80, 15, 3));
                         break;
 
                     case 4:
-                        _soldiers.Add(new MachineGunnerSoldier(85, 15 , 2));
+                        _soldiers.Add(new MachineGunnerSoldier(85, 15, 2));
                         break;
 
                 }
@@ -208,6 +211,8 @@ namespace HW44
 
         public void Attack(Squad target)
         {
+            Console.WriteLine($"Отряд {Name} атакует!!");
+
             foreach (Soldier soldier in _soldiers)
             {
                 if (soldier.IsAlive)
@@ -215,7 +220,7 @@ namespace HW44
             }
         }
 
-        public void RemoveDead()
+        public void SelectAlive()
         {
             List<Soldier> alive = new List<Soldier>();
 
