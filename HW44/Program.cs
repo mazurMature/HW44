@@ -50,8 +50,8 @@ namespace HW44
             {
                 Console.WriteLine("\n--- Новый раунд ---");
 
-                _squadA.Attack(_squadB);
-                _squadB.Attack(_squadA);
+                _squadA.Attack(_squadB.SoldiersList);
+                _squadB.Attack(_squadA.SoldiersList);
 
                 _squadA.SelectAlive();
                 _squadB.SelectAlive();
@@ -198,36 +198,32 @@ namespace HW44
 
     public class SquadCreator
     {
+        private List<Soldier> _baseSoldiers = new List<Soldier>()
+        {
+            new RegularSoldier(100, 20, 5),
+            new SniperSoldier(90, 25, 4),
+            new МortarmanSoldier(80, 15, 3),
+            new MachineGunnerSoldier(85, 15, 2),
+        };
+
         public Squad Create(int count, string name)
         {
-            List<Soldier> baseSoldiers = new List<Soldier>();
             List<Soldier> soldiers = new List<Soldier>();
-
-            baseSoldiers.Add(new RegularSoldier(100, 20, 5));
-            baseSoldiers.Add(new SniperSoldier(90, 25, 4));
-            baseSoldiers.Add(new МortarmanSoldier(80, 15, 3));
-            baseSoldiers.Add(new MachineGunnerSoldier(85, 15, 2));
 
             for (int i = 0; i < count; i++)
             {
-                int index = Utils.GenerateRandomNumber(baseSoldiers.Count);
+                int index = Utils.GenerateRandomNumber(_baseSoldiers.Count);
 
-                soldiers.Add(baseSoldiers[index].Clone());
+                soldiers.Add(_baseSoldiers[index].Clone());
             }
 
-            Squad squad = new Squad(name, soldiers);
-            return squad;
+            return new Squad(name, soldiers);
         }
     }
 
     public class Squad
     {
         private List<Soldier> _soldiers;
-
-        public Squad(string name)
-        {
-            Name = name;
-        }
 
         public Squad(string name, List<Soldier> soldiers)
         {
@@ -236,15 +232,16 @@ namespace HW44
         }
 
         public string Name { get; private set; }
+        public List<Soldier> SoldiersList => _soldiers;
 
-        public void Attack(Squad target)
+        public void Attack(List<Soldier> enemies)
         {
             Console.WriteLine($"Отряд {Name} атакует!!");
 
             foreach (Soldier soldier in _soldiers)
             {
                 if (soldier.IsAlive)
-                    soldier.Attack(target._soldiers);
+                    soldier.Attack(enemies);
             }
         }
 
@@ -268,6 +265,7 @@ namespace HW44
                 if (_soldiers[i].IsAlive)
                     return true;
             }
+
             return false;
         }
     }
