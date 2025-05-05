@@ -232,7 +232,7 @@ namespace HW44
         }
 
         public string Name { get; private set; }
-        public List<Soldier> SoldiersList => _soldiers;
+        public List<Soldier> SoldiersList => new List<Soldier>(_soldiers);
 
         public void Attack(List<Soldier> enemies)
         {
